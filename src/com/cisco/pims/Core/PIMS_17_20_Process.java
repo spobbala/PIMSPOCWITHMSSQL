@@ -195,10 +195,23 @@ public class PIMS_17_20_Process {
 				tStr = tStr1+"/dncs"+"/hcttypes";
 				dir = new File(baseDir+tStr);
 				dir.mkdir();
-				tStr = tStr1+"/dncs"+"/hcttypes"+"/9153V1.0";
+				readQuery = "SELECT sq.filename, t.file_data FROM (SELECT distinct filename FROM dbo.PIMS_TYPE_FILES t, dbo.PIMS_EMM_BUILD_STRATEGY ebs, "
+						+ "(SELECT DISTINCT s.model, s.hw_rev, m.mfg_id,m.mac_prefix FROM dbo.PIMS_PRODUCT s, dbo.PIMS_MFG_MAC_ADDR_RANGE m,"
+						+ " dbo.PIMS_BATCH_DETAIL er WHERE er.batch_id=" +batchid +" AND er.dhct_sn = s.dhct_sn AND m.mac_prefix=substring(s.mac_addr,1,6)"
+						+ " ) psq WHERE psq.model = ebs.model AND psq.hw_rev = ebs.hw_rev AND psq.mfg_id = ebs.mfg_id AND ebs.model=t.dhct_type "
+						+ "AND ebs.hw_rev=t.dhct_rev AND ebs.mfg_id=t.mfg_id AND ((SELECT CASE WHEN ebs.strategy = 'MFG_ID' THEN psq.mfg_id ELSE psq.mac_prefix"
+						+ " END) = t.mac_ref ) )sq, PIMS_TYPE_FILES t WHERE t.filename = sq.filename";
+				rSet1 = DAOClient.readDataFromTable(readQuery);
+				while(rSet1.next()){
+				tStr = tStr1+"/dncs"+"/hcttypes/"+rSet1.getString("FILENAME");
+				System.out.println(tStr);
 				dir = new File(baseDir+tStr);
 				dir.createNewFile();
-				
+				fos = new FileOutputStream(dir);
+				fos.write(rSet1.getBytes("FILE_DATA"));
+				fos.close();
+				}
+				rSet1.close();
 				dir = new File("C:/testout/"+delID+"-"+helper.randomBatchID(batchid)+".tar");
 				File dir1 = new File(baseDir);
 				helper.zip(dir1, dir);
