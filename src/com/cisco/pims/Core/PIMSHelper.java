@@ -64,7 +64,6 @@ public class PIMSHelper {
 	}
 	 public void zip(File directory, File zipfile) throws IOException {
 		    URI base = directory.toURI();
-		    System.out.println(base);
 		    Deque<File> queue = new LinkedList<File>();
 		    queue.push(directory);
 		    OutputStream out = new FileOutputStream(zipfile);
