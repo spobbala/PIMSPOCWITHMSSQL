@@ -1,20 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <classpath>
 	<classpathentry kind="src" path="src"/>
-	<classpathentry kind="lib" path="C:/Users/spobbala/Desktop/Cassandra/lib/cassandra-all-1.2.9.jar"/>
-	<classpathentry kind="lib" path="C:/Users/spobbala/Desktop/Cassandra/lib/cassandra-jdbc-1.2.5.jar"/>
-	<classpathentry kind="lib" path="C:/Users/spobbala/Desktop/Cassandra/lib/cassandra-thrift-1.2.3.jar"/>
-	<classpathentry kind="lib" path="C:/Users/spobbala/Desktop/Cassandra/lib/guava-14.0.1.jar"/>
-	<classpathentry kind="lib" path="C:/Users/spobbala/Desktop/Cassandra/lib/libthrift-0.7.0.jar"/>
-	<classpathentry kind="lib" path="C:/Users/spobbala/Desktop/Cassandra/lib/log4j-1.2.16.jar"/>
-	<classpathentry kind="lib" path="C:/Users/spobbala/Desktop/Cassandra/lib/slf4j-api-1.7.5.jar"/>
-	<classpathentry kind="lib" path="C:/Users/spobbala/Desktop/Cassandra/lib/slf4j-log4j12-1.7.5.jar"/>
 	<classpathentry kind="lib" path="C:/Users/spobbala/Desktop/Cassandra/lib/mail.jar"/>
 	<classpathentry kind="lib" path="C:/Users/spobbala/Desktop/Cassandra/lib/sqljdbc4.jar"/>
-	<classpathentry kind="lib" path="C:/Users/spobbala/Desktop/Cassandra/lib/com.sun.rowset.jar"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
-	<classpathentry kind="lib" path="C:/Users/spobbala/Desktop/Cassandra/lib/ojdbc5.jar"/>
-	<classpathentry kind="lib" path="C:/Users/spobbala/Desktop/Cassandra/lib/commons-net.jar"/>
 	<classpathentry kind="lib" path="C:/Users/spobbala/Desktop/Cassandra/lib/maverick-all.jar"/>
+	<classpathentry kind="lib" path="C:/Users/spobbala/Desktop/Cassandra/lib/jtar-1.1.jar"/>
+	<classpathentry kind="lib" path="C:/Users/spobbala/Desktop/Cassandra/lib/commons-net.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

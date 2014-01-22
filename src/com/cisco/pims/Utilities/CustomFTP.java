@@ -86,18 +86,6 @@ public class CustomFTP {
 
 	public String ftpSendFile() {
 		String ftpStatus = null;
-		if (strServerNameOrIpAddress == null || userName == null
-				|| ftpPassword == null || toLocation == null
-				|| fileName == null) {
-			ftpStatus = "Mandatory Parameter missing or null, file not sent:"
-					+ fileName;
-			return ftpStatus;
-		} else if (fromLocation == null && inputBytes == null) {
-			ftpStatus = "Mandatory Parameter missing or null, file not sent:"
-					+ fileName;
-			return ftpStatus;
-		}
-
 		boolean ftpStat = false;
 		FTPClient ftpClient = new FTPClient();
 		try {
@@ -119,7 +107,7 @@ public class CustomFTP {
 				}
 				
 				if (ftpStat)
-					ftpStatus = "The following file FTP'ed successfully:"
+					ftpStatus = "The following file FTP'ed Successfully:"
 							+ fileName;
 				else
 					ftpStatus = "FTP Failed, file not sent: " + fileName;

@@ -1,0 +1,19 @@
+MSSQLServer=jdbc:sqlserver://ALLN01-ATS-QMXSQL1\\QMXSQL1:51005;databaseName=PIMS
+DBUserName=pimsdb
+DBPassword=Pimsdb!
+FromEmail=spobbala@gmail.com
+ToEmail=spobbala@cisco.com
+MailUserName=spobbala@gmail.com
+MailPassword=Shri@cisco9
+MailServer=smtp.gmail.com
+MailPort=587
+TarFileLocation=c:/testout/TarFiles/
+#UnixTarFile=/home/cassandra/pims/PIMSPOC/TarFiles/
+FileLoc_30_40=c:/testin/30_40/
+#UnixFileLoc_30_40=/home/cassandra/pims/PIMSPOC/30_40/
+TempFileLoc=c:/testout/temp/
+#UnixFileLoc=/home/cassandra/pims/PIMSPOC/temp/
+PubKeyLoc=C:/Users/spobbala/AppData/Roaming/SSH/UserKeys/XI_SFTP_Test
+#UnixPubKeyLoc=/home/cassandra/pims/PIMSPOC/keys/
+EULA=----BEGIN 3SP LICENSE----\r\nProduct : J2SSH Maverick\r\nLicensee: Scientific-Atlanta, Inc.\r\nComments: Jeff Lundmark\r\nType    : Professional License\r\nCreated : 15-Nov-2007\r\n\r\n3787201F04D3EBDBA600F3CF9CCEF4C889F356BE746AEE25\r\n25BC1EDEA3B46FCD6D51D7ABDD4978861CD1A1BB5888F695\r\n55BD1BFCD3C72200411F58769CDCA769B00868238FEB4718\r\nEB38070246B5B258FE709A24BB648B8E8EA07900CB8692AB\r\n6C8452ED639BAF0B187DCC0C9C366E04945B49C743B229C8\r\n30A490EC09AD09BA8739FB2F8BC4B4445B7F1FBB920EB878\r\n----END 3SP LICENSE----\r\n
+Environment = envTest

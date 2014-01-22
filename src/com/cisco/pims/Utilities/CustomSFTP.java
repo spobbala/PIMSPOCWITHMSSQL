@@ -8,11 +8,9 @@ package com.cisco.pims.Utilities;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
-import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.Properties;
 
 import com.maverick.sftp.SftpStatusException;
 import com.maverick.sftp.TransferCancelledException;
@@ -43,16 +41,16 @@ public class CustomSFTP {
 	private String fromLocation;
 	private String toLocation;
 	private String fileName;
+	private String certKey;
 	private int port;
 	private String authenticationMethod;
 	private String privateKeyFileLoc;
-	private String certFilePath;
 	private byte[] inputBytes;
 
 	public CustomSFTP(String strServerNameOrIpAddress, String userName,
 			String sftpPassword, String fromLocation, String toLocation,
 			String fileName, int port, String authenticationMethod,
-			String privateKeyFileLoc, String certFilePath) {
+			String privateKeyFileLoc, String certKey) {
 
 		this.strServerNameOrIpAddress = strServerNameOrIpAddress;
 		this.userName = userName;
@@ -63,14 +61,14 @@ public class CustomSFTP {
 		this.port = port;
 		this.authenticationMethod = authenticationMethod;
 		this.privateKeyFileLoc = privateKeyFileLoc;
-		this.certFilePath = certFilePath;
+		this.certKey = certKey;
 
 	}
 
 	public CustomSFTP(String strServerNameOrIpAddress, String userName,
 			String sftpPassword, String toLocation, 
 			String fileName, byte[] inputBytes, int port, String authenticationMethod,
-			String privateKeyFileLoc, String certFilePath) {
+			String privateKeyFileLoc, String certKey) {
 
 		this.strServerNameOrIpAddress = strServerNameOrIpAddress;
 		this.userName = userName;
@@ -80,8 +78,8 @@ public class CustomSFTP {
 		this.port = port;
 		this.authenticationMethod = authenticationMethod;
 		this.privateKeyFileLoc = privateKeyFileLoc;
-		this.certFilePath = certFilePath;
 		this.inputBytes = inputBytes;
+		this.certKey = certKey;
 
 	}
 
@@ -89,8 +87,7 @@ public class CustomSFTP {
 		String sftpStatus = null;
 			if (strServerNameOrIpAddress == null || userName == null
 				|| sftpPassword == null || toLocation == null
-				|| fileName == null || port <= 0 || certFilePath == null
-				|| authenticationMethod == null) {
+				|| fileName == null || port <= 0 || certKey == null || authenticationMethod == null) {
 			sftpStatus = "Mandatory Parameter missing file not sent:"
 					+ fileName;
 			return sftpStatus;
@@ -106,15 +103,11 @@ public class CustomSFTP {
 					+ fileName;
 			return sftpStatus;
 		}
-		Properties propFile = new Properties();
-		sftpStatus = fileName + ": " + "File Sent Successfully";
+		
 		SshClient ssh = null;
 		PasswordAuthentication pwd = null;
 		try {
-			propFile.load(new FileInputStream(new File(certFilePath)));
-			String key = "EULA";
-			String val = propFile.getProperty(key);
-			LicenseManager.addLicense(val);
+			LicenseManager.addLicense(certKey);
 			SshConnector con = SshConnector.getInstance();
 			con.getContext(2).setHostKeyVerification(
 					new ConsoleKnownHostsKeyVerification());
@@ -176,6 +169,7 @@ public class CustomSFTP {
 					sftp.put(fromLocation + fileName);
 				}
 			}
+			sftpStatus = fileName + ": " + "File Sent Successfully";
 			ssh.disconnect();
 		} catch (SftpStatusException sso) {
 			sftpStatus = "SFTP Error1:" + sso.getMessage();

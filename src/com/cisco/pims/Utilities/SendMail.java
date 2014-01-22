@@ -6,9 +6,6 @@
  */
 package com.cisco.pims.Utilities;
 
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.IOException;
 import java.util.Properties;
 
 import javax.activation.DataHandler;
@@ -30,30 +27,41 @@ public class SendMail {
 	BodyPart messageBodyPart = null;
 	Properties propMail = null;
 	MimeMessage message = null;
-	private static final String propFilePath = "C:/testin/pimspocproperties.properties";
-
+	String userName = null;
+	String password = null;
+	String mailServer = null;
+	String mailPort = null;
+	public SendMail(String userName,
+					String password,
+					String mailServer,
+					String mailPort) {
+		this.userName = userName;
+		this.password = password;
+		this.mailServer = mailServer;
+		this.mailPort  = mailPort;
+		
+	}
 	public void connectToMailServer() {
-		propFile = new Properties();
-		try {
-			propFile.load(new FileInputStream(propFilePath));
-		} catch (FileNotFoundException fn) {
-			fn.printStackTrace();
-
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+		if(userName==null ||
+		   password==null ||
+		   mailServer==null ||
+		   mailPort == null){
+			System.out.println("One of the parameter is missing");
+			System.out.println("UserName="+userName);
+			System.out.println("Password=");
+			System.out.println("MailServer="+mailServer);
+			System.out.println("MailPort="+mailPort);
+			System.exit(0);
 		}
-		final String username = propFile.getProperty("UserName");
-		final String password = propFile.getProperty("password");
 		propMail = new Properties();
 		propMail.put("mail.smtp.auth", "true");
 		propMail.put("mail.smtp.starttls.enable", "true");
-		propMail.put("mail.smtp.host", propFile.getProperty("MailServer"));
-		propMail.put("mail.smtp.port", propFile.getProperty("MailPort"));
+		propMail.put("mail.smtp.host", mailServer);
+		propMail.put("mail.smtp.port", mailPort);
 		Session session = Session.getDefaultInstance(propMail,
 				new javax.mail.Authenticator() {
 					protected PasswordAuthentication getPasswordAuthentication() {
-						return new PasswordAuthentication(username, password);
+						return new PasswordAuthentication(userName, password);
 					}
 				});
 		message = new MimeMessage(session);
