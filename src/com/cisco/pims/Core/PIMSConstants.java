@@ -78,15 +78,29 @@ public interface PIMSConstants {
 	public static final String QUERYBDET_17_20 = "select b.batch_id, b.ship_to_cust_id, d.dhct_sn from dbo.pims_batch_header b "
 												+ "join dbo.pims_batch_detail d"
 												+ " on b.batch_id = d.batch_id where b.batch_id = ?";
+	public static final String UPDATEQUERY_17_20 = "update dbo.pims_batch_detail set "
+												 + "DHCT_SN = ?, "
+												 + "EMM_SMSN = ?, "
+												 + "EMM_MACADDRESS = ?, "
+												 + "EMM_MODEL = ?, "
+												 + "EMM_REV = ?, "
+												 + "EMM_MFGDATE = ?, "
+												 + "EMM_MATLNO = ?, "
+												 + "EMM_CCARD_ID = ?, "
+												 + "EMM_CABLECARD_SN = ?, "
+												 + "EMM_ORIGINALSN = ? "
+												 + "where BATCH_ID = ? "
+												 + "AND DHCT_SN = ?";
 	public static final String INSERTQUERY_17_20 = "Insert into dbo.pims_product (DHCT_SN, SM_SN, MAC_ADDR, "
 												 + "MODEL, HW_REV, DHCT_MFG_DT, DATE_CREATE,"
 												+ "DHCT_STATUS_CD, CUST_CAA_ID, MFG_ID) "
 												+ "values (?,?,?,?,?,?,CURRENT_TIMESTAMP,"+STATUS_20 +",?,?)";
-	public static final String QUERYSNGET = "SELECT serial_number, attribute_id, attribute_sequence, attribute_value, transaction_date_time FROM "
+	public static final String QUERYSNGET = "SELECT serial_number, item_number, attribute_id, attribute_sequence, attribute_value, "
+											+ "transaction_date_time FROM "
 											+ "dbo.pims_PRT_SERIAL_ATTRIBUTES"
 											+ " WHERE  serial_number = ?"
-											+ " AND attribute_id IN (5,7,14,16,20,43,71)"
-											+ " ORDER BY serial_number, attribute_id, attribute_sequence, transaction_date_time desc";
+											+ " AND attribute_id IN (5,7,14,16,20,43,71,152,157)"
+											+ " ORDER BY attribute_id, attribute_sequence, transaction_date_time desc";
 	public static final String QUERYCAAGET = "select d.cust_caa_id from dbo.pims_ship_to s join dbo.pims_dncs d on s.dncs_id = d.dncs_id "
 											  + "where s.ship_to_cust_id = ?";
 	public static final String UPDATEBQUERY = "update dbo.pims_batch_header set batch_status_cd = ? where batch_id = ?";

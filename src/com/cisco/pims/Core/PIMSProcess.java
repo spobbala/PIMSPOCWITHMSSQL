@@ -50,7 +50,7 @@ public static void main(String args[]) {
 			processName = args[0];
 			batchid = Integer.parseInt(args[1]);
 		} else
-			processName = "50_70";
+			processName = "17_20";
 		
 		try {
 			inStream = PIMSProcess.class
@@ -69,7 +69,7 @@ public static void main(String args[]) {
 				proc20_30.process(batchid);
 			} else if (processName.equals("30_40")) { // 30_40 Process
 				PIMSProcess_30_40 proc30_40 = new PIMSProcess_30_40(lclCon, propFile);
-				proc30_40.process();
+				proc30_40.process(batchid);
 			} else if (processName.equals("40_50")) { // 40_50 Process
 				PIMSProcess_40_50 proc40_50 = new PIMSProcess_40_50(lclCon, propFile);
 				proc40_50.process(batchid);

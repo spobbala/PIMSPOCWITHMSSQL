@@ -12,40 +12,39 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Properties;
 
 public class PIMSProcess_17_20 {
 	private PIMSLogging pimsLogging = null;
 	private Connection pimsCon;
 	private Properties propFile;
-	
+
 	public PIMSProcess_17_20(Connection lclCon, Properties propFile) {
 		this.pimsCon = lclCon;
 		this.propFile = propFile;
 		this.pimsLogging = new PIMSLogging(pimsCon,
 				propFile.getProperty("Environment"));
 	}
-	public void process(int batchid){
+
+	public void process(int batchid) {
 		PreparedStatement pstmt = null;
 		ResultSet rSet = null;
-		try
-		{
+		try {
 			pstmt = batchid > 0 ? DBConnectionFactory.prepareStatement(
-				this.pimsCon, PIMSConstants.QUERYBATCH, batchid,
-				PIMSConstants.STATUS_17) : DBConnectionFactory
-				.prepareStatement(this.pimsCon,
-						PIMSConstants.QUERYSTATUS,
-						PIMSConstants.STATUS_17);
-		rSet = pstmt.executeQuery();
-		SendMailDAO mailProc = new SendMailDAO(pimsCon, propFile);
-		while (rSet.next()) {
-			this.prepareProductTable_17_20(rSet
-					.getInt("BATCH_ID"));
-			
-			mailProc.generateEmail(rSet.getInt("BATCH_ID"),
-					PIMSConstants.PROCESS17_20);
-		}
-		}catch (SQLException sql) {
+					this.pimsCon, PIMSConstants.QUERYBATCH, batchid,
+					PIMSConstants.STATUS_17) : DBConnectionFactory
+					.prepareStatement(this.pimsCon, PIMSConstants.QUERYSTATUS,
+							PIMSConstants.STATUS_17);
+			rSet = pstmt.executeQuery();
+			SendMailDAO mailProc = new SendMailDAO(pimsCon, propFile);
+			while (rSet.next()) {
+				this.process_17_20(rSet.getInt("BATCH_ID"));
+
+				mailProc.generateEmail(rSet.getInt("BATCH_ID"),
+						PIMSConstants.PROCESS17_20);
+			}
+		} catch (SQLException sql) {
 			pimsLogging.logMessage(
 					batchid,
 					null,
@@ -59,7 +58,8 @@ public class PIMSProcess_17_20 {
 			DBConnectionFactory.close(this.pimsCon, pstmt, rSet);
 		}
 	}
-	public void prepareProductTable_17_20(int batchid) {
+
+	public void process_17_20(int batchid) {
 		Map<String, String> mValues = new HashMap<String, String>();
 		Map<String, String> mapID = new HashMap<String, String>();
 
@@ -69,7 +69,9 @@ public class PIMSProcess_17_20 {
 
 		int cnt = 0;
 		int count = 0;
-		
+
+		boolean comboFlag = false;
+
 		PreparedStatement pstmt = null;
 		ResultSet rSet = null;
 		pimsLogging.logMessage(batchid, null, null, pimsLogging.getSequence(),
@@ -93,19 +95,27 @@ public class PIMSProcess_17_20 {
 				String mfgID = null;
 				String tempStr = null;
 				String custCAAID = null;
-				tempStr = mValues.get("MODEL") + mValues.get("HWVER");
+				String model = null;
+				String hwver = null;
+				String matrev = null;
+				if (mValues.get("TYPE").equals("COMBO"))
+					comboFlag = true;
+				model = mValues.get("MODEL");
+				hwver = mValues.get("HWVER");
+				matrev = mValues.get("MATREVLEVEL");
+				tempStr = model + hwver;
 				mfgID = mapID.get(tempStr);
 				if (mfgID == null) {
 					cnt++;
-					mfgID = this.getMfgID(mValues.get("MODEL"), mValues.get("HWVER"));
-					mapID.put("HWVER" + cnt, mValues.get("HWVER"));
+					mfgID = this.getMfgID(model, hwver);
+					mapID.put("HWVER" + cnt, hwver);
 					if (mfgID == null) {
-						mfgID = this.getMfgID(mValues.get("MODEL"),
-								mValues.get("MATREVLEVEL"));
-						mapID.put("HWVER" + cnt, mValues.get("MATREVLEVEL"));
+						mfgID = this.getMfgID(model, matrev);
+						mapID.put("HWVER" + cnt, matrev);
 					}
 					mapID.put(tempStr, mfgID);
 				}
+
 				custCAAID = mapID.get(rSet.getString("SHIP_TO_CUST_ID"));
 				if (custCAAID == null) {
 					custCAAID = this.getCustID(rSet
@@ -113,43 +123,76 @@ public class PIMSProcess_17_20 {
 					mapID.put(rSet.getString("SHIP_TO_CUST_ID"), custCAAID);
 				}
 				if (custCAAID == null) {
-					pimsLogging.logMessage(
-							batchid,
-							serialNumber,
-							null,
-							pimsLogging.getSequence(),
-							pimsLogging.getPriorityHigh(),
-							pimsLogging.getErrMsgId(),
-							"No CUSTCAAID setup for SHIP_TO:"
-									+ rSet.getString("SHIP_TO_CUST_ID")
-									+ " for Serial Number:" + serialNumber
-									+ " in Batch ID:" + rSet.getInt("BATCH_ID"));
+					pimsLogging
+							.logMessage(
+									batchid,
+									serialNumber,
+									null,
+									pimsLogging.getSequence(),
+									pimsLogging.getPriorityHigh(),
+									pimsLogging.getErrMsgId(),
+									"No CUSTCAAID setup for SHIP_TO:"
+											+ rSet.getString("SHIP_TO_CUST_ID")
+											+ " for Serial Number:"
+											+ serialNumber + " in Batch ID:"
+											+ rSet.getInt("BATCH_ID"));
 					uStatus = false;
 				}
 				if (mfgID == null) {
-					pimsLogging.logMessage(
-							batchid,
-							serialNumber,
-							null,
-							pimsLogging.getSequence(),
-							pimsLogging.getPriorityHigh(),
-							pimsLogging.getErrMsgId(),
-							"No MFGID setup for model:" + mValues.get("MODEL")
-									+ " and HWVER/MATREVLEVEL "
-									+ mValues.get("HWVER") + "/"
-									+ mValues.get("MATREVLEVEL")
-									+ " for Serial Number:" + serialNumber
-									+ " in Batch ID:" + rSet.getInt("BATCH_ID"));
+					pimsLogging
+							.logMessage(
+									batchid,
+									serialNumber,
+									null,
+									pimsLogging.getSequence(),
+									pimsLogging.getPriorityHigh(),
+									pimsLogging.getErrMsgId(),
+									"No MFGID setup for model:"
+											+ mValues.get("MODEL")
+											+ " and HWVER/MATREVLEVEL "
+											+ mValues.get("HWVER") + "/"
+											+ mValues.get("MATREVLEVEL")
+											+ " for Serial Number:"
+											+ serialNumber + " in Batch ID:"
+											+ rSet.getInt("BATCH_ID"));
 					uStatus = false;
 				}
-				mValues.put("SN", serialNumber);
 				mValues.put("MFGID", mfgID);
 				mValues.put("CAAID", custCAAID);
 				mValues.put("HWVER", mapID.get("HWVER" + cnt));
+
 				if (uStatus) {
 					count++;
-					this.insertProductTable(batchid, mValues,
+					// this.insertProductTable(batchid, mValues,
+					// PIMSConstants.INSERTQUERY_17_20);
+					pstmt = DBConnectionFactory.prepareStatement(pimsCon,
 							PIMSConstants.INSERTQUERY_17_20);
+					pstmt.setString(1, mValues.get("SN")); // DHCT_SN
+					pstmt.setString(2, mValues.get("SMSN"));
+					pstmt.setString(3, mValues.get("MACADDR"));
+					pstmt.setString(4, mValues.get("MODEL"));
+					pstmt.setString(6, mValues.get("MFGDATE"));
+					pstmt.setString(5, mValues.get("HWVER")); // HW REV
+					pstmt.setString(7, mValues.get("CAAID"));
+					pstmt.setString(8, mValues.get("MFGID"));
+					pstmt.executeUpdate();
+					if (comboFlag) {
+						pstmt = DBConnectionFactory.prepareStatement(pimsCon,
+								PIMSConstants.UPDATEQUERY_17_20);
+						pstmt.setString(1, mValues.get("SN"));
+						pstmt.setString(2, mValues.get("SMSN"));
+						pstmt.setString(3, mValues.get("MACADDR"));
+						pstmt.setString(4, mValues.get("MODEL"));
+						pstmt.setString(5, mValues.get("HWVER"));
+						pstmt.setString(6, mValues.get("MFGDATE"));
+						pstmt.setString(7, mValues.get("MATNO"));
+						pstmt.setString(8, mValues.get("CCID"));
+						pstmt.setString(9, mValues.get("SN"));
+						pstmt.setString(10, serialNumber);
+						pstmt.setInt(11, batchid);
+						pstmt.setString(12, serialNumber);
+						pstmt.executeUpdate();
+					}
 				}
 				mValues.clear();
 			}
@@ -157,17 +200,18 @@ public class PIMSProcess_17_20 {
 			mapID.clear();
 			if (uStatus) {
 
-				pimsLogging.logMessage(batchid, null, null, pimsLogging.getSequence(),
+				pimsLogging.logMessage(batchid, null, null,
+						pimsLogging.getSequence(),
 						pimsLogging.getPriorityLow(),
 						pimsLogging.getTrackingMsgId(),
 						"Total records updated in Product Table:" + count);
-				pimsCon.commit();
 				pstmt = DBConnectionFactory.prepareStatement(pimsCon,
 						PIMSConstants.UPDATEBQUERY, PIMSConstants.STATUS_20,
 						batchid);
 				pstmt.executeUpdate();
 				pimsCon.commit();
-			}
+			}else
+				pimsCon.rollback();
 		} catch (SQLException sql) {
 			pimsLogging.logMessage(
 					batchid,
@@ -193,19 +237,23 @@ public class PIMSProcess_17_20 {
 			DBConnectionFactory.close(pstmt, rSet);
 		}
 	}
+
 	public Map<String, String> getSNAttribs(String serialNumber)
 			throws SQLException {
 		PreparedStatement pstmt = null;
 		ResultSet rSet1 = null;
 
 		String formatString = null;
+		String ccid = null;
 
 		Map<String, String> mValues = new HashMap<String, String>();
+		Map<String, String> mCValues = new HashMap<String, String>();
 
 		pstmt = DBConnectionFactory.prepareStatement(pimsCon,
 				PIMSConstants.QUERYSNGET, serialNumber);
 		rSet1 = pstmt.executeQuery();
 		while (rSet1.next()) {
+			mValues.put("MATNO", rSet1.getString("ITEM_NUMBER"));
 			switch (rSet1.getInt("ATTRIBUTE_ID")) {
 			case 5: // MFGDATE
 				mValues.put("MFGDATE", rSet1.getString("ATTRIBUTE_VALUE"));
@@ -234,15 +282,28 @@ public class PIMSProcess_17_20 {
 				formatString = formatString.replaceAll("\\.", "");
 				mValues.put("MATREVLEVEL", formatString);
 				break;
-
+			case 152: // Cable Card ID
+				ccid = rSet1.getString("ATTRIBUTE_VALUE");
+				break;
+			case 157: // Cable Card SN
+				mCValues = this
+						.getSNAttribs(rSet1.getString("ATTRIBUTE_VALUE"));
+				mCValues.put("SN", rSet1.getString("ATTRIBUTE_VALUE"));
+				mCValues.put("TYPE", "COMBO");
+				if(ccid!=null)
+					mCValues.put("CCID", ccid);
+				DBConnectionFactory.close(pstmt, rSet1);
+				return mCValues;
+				// break;
 			default:
 				// do nothing
 				break;
 			}
 		}
-		DBConnectionFactory.close(pstmt, rSet1);
+
 		return mValues;
 	}
+
 	public String getMfgID(String model, String hwverOrMatRev)
 			throws SQLException {
 
@@ -259,6 +320,7 @@ public class PIMSProcess_17_20 {
 		DBConnectionFactory.close(pstmt, rSet);
 		return mfgID;
 	}
+
 	public String getCustID(String shipToID) throws SQLException {
 		String custID = null;
 
@@ -274,29 +336,4 @@ public class PIMSProcess_17_20 {
 		return custID;
 	}
 
-	public void insertProductTable(int batchid, Map<String, String> mValues,
-			String insertQuery) {
-		PreparedStatement updateTable = null;
-		try {
-			updateTable = pimsCon.prepareStatement(insertQuery);
-			updateTable.setString(1, mValues.get("SN")); // DHCT_SN
-			updateTable.setString(2, mValues.get("SMSN"));
-			updateTable.setString(3, mValues.get("MACADDR"));
-			updateTable.setString(4, mValues.get("MODEL"));
-			updateTable.setString(6, mValues.get("MFGDATE"));
-			updateTable.setString(5, mValues.get("HWVER")); // HW REV
-			updateTable.setString(7, mValues.get("CAAID"));
-			updateTable.setString(8, mValues.get("MFGID"));
-			updateTable.executeUpdate();
-			mValues.clear();
-		} catch (SQLException sql) {
-			pimsLogging.logMessage(batchid, mValues.get("SN"), null,
-					pimsLogging.getSequence(), pimsLogging.getPriorityHigh(),
-					pimsLogging.getErrMsgId(),
-					"Error while updating Nothing Blob for the batch id:"
-							+ batchid + ", Error Details:" + sql.getMessage());
-		} finally {
-			DBConnectionFactory.close(updateTable);
-		}
-	}
 }
