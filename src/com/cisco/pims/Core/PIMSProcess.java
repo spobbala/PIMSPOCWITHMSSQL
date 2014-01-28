@@ -50,7 +50,7 @@ public static void main(String args[]) {
 			processName = args[0];
 			batchid = Integer.parseInt(args[1]);
 		} else
-			processName = "17_20";
+			processName = "50_70";
 		
 		try {
 			inStream = PIMSProcess.class

@@ -11,6 +11,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Properties;
+import java.util.Set;
 
 import com.cisco.pims.Utilities.SendMail;
 
@@ -21,19 +22,30 @@ public class SendMailDAO {
 		this.pimsCon = con;
 		this.propFile = propFile;
 	}
-	public void generateEmail(int batchid, String processName)
+	public void generateEmail(int batchid, Set<Integer> nID, String processName)
 			throws SQLException {
 		PreparedStatement pstmt = null;
 		ResultSet rSet = null;
 		boolean status = true;
 		String statusMessage = "<tr>";
 		String subject = null;
+		String qty = "(";
+		int k = 0;
+		for(int i: nID){
+			System.out.println("ID:" +i);
+			k++;
+			if(k==nID.size())
+				qty = qty +i + ")";
+			else
+				qty = qty + i+",";
+		}
 		pstmt = DBConnectionFactory.prepareStatement(pimsCon,
-				PIMSConstants.QUERYMAIL, batchid);
+				PIMSConstants.QUERYMAIL+qty);
 		rSet = pstmt.executeQuery();
 		while (rSet.next()) {
 			if (rSet.getString("TYPE_MSG").equalsIgnoreCase("ERROR") && status)
 				status = false;
+			
 			statusMessage = statusMessage + PIMSConstants.MAILSTARTTAGMSG
 					+ rSet.getString("DHCT_SN") + PIMSConstants.MAILENDTAGMSG;
 			statusMessage = statusMessage + PIMSConstants.MAILSTARTTAGMSG

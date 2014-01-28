@@ -25,7 +25,8 @@ public class PIMSProcess_50_70 {
 	private Connection pimsCon;
 	private Properties propFile;
 	private PIMSHelper helper;
-	
+	private Set<Integer> nIDs = new LinkedHashSet<Integer>();
+	private int notifID = 0;
 	public PIMSProcess_50_70(Connection lclCon, Properties propFile) {
 		this.pimsCon = lclCon;
 		this.propFile = propFile;
@@ -49,12 +50,12 @@ public class PIMSProcess_50_70 {
 				this.process_50_70(rSet.getInt("BATCH_ID"),
 						rSet.getString("DELIVERY_ID"),
 						rSet.getString("INFO1"));
-				mailProc.generateEmail(rSet.getInt("BATCH_ID"),
+				mailProc.generateEmail(batchid, nIDs,
 						PIMSConstants.PROCESS50_70);
 			}
 		}
 		catch (SQLException sql) {
-			pimsLogging.logMessage(
+			notifID = pimsLogging.logMessage(
 					batchid,
 					null,
 					null,
@@ -63,6 +64,7 @@ public class PIMSProcess_50_70 {
 					pimsLogging.getErrMsgId(),
 					"DB Error in 50_70 Process, Error Details:"
 							+ sql.getMessage());
+			nIDs.add(notifID);
 		} finally {
 			DBConnectionFactory.close(this.pimsCon, pstmt, rSet);
 		}
@@ -77,17 +79,19 @@ public class PIMSProcess_50_70 {
 		FileOutputStream fos = null;
 		PreparedStatement pstmt = null;
 		ResultSet rSet1 = null;
-		pimsLogging.logMessage(batchid, null, null, pimsLogging.getSequence(),
+		notifID = pimsLogging.logMessage(batchid, null, null, pimsLogging.getSequence(),
 				pimsLogging.getPriorityHigh(), pimsLogging.getTrackingMsgId(),
 				"Entered 50_70 Process batchid:" + batchid);
 			baseDir = propFile.getProperty("TempFileLoc");
 			tarFileLoc = propFile.getProperty("TarFileLocation");
-		if (baseDir == null || tarFileLoc == null) {
-			pimsLogging.logMessage(batchid, null, null, pimsLogging.getSequence(),
+			nIDs.add(notifID);
+			if (baseDir == null || tarFileLoc == null) {
+			notifID = pimsLogging.logMessage(batchid, null, null, pimsLogging.getSequence(),
 					pimsLogging.getPriorityHigh(), pimsLogging.getErrMsgId(),
 					"Tar File Location or temp Directory missing in properties file"
 							+ "Tar File Location=" + tarFileLoc + "Temp Dir="
 							+ baseDir);
+			nIDs.add(notifID);
 		}
 
 		try {
@@ -187,20 +191,23 @@ public class PIMSProcess_50_70 {
 					batchid);
 			pstmt.executeUpdate();
 			pimsCon.commit();
-			pimsLogging.logMessage(batchid, null, null, pimsLogging.getSequence(),
+			notifID = pimsLogging.logMessage(batchid, null, null, pimsLogging.getSequence(),
 					pimsLogging.getPriorityHigh(),
 					pimsLogging.getSuccessMsgId(),
 					"Tar File Generated in Location:" + tarFileLoc + tStr);
+			nIDs.add(notifID);
 		} catch (SQLException sql) {
-			pimsLogging.logMessage(batchid, null, null, pimsLogging.getSequence(),
+			notifID = pimsLogging.logMessage(batchid, null, null, pimsLogging.getSequence(),
 					pimsLogging.getPriorityHigh(), pimsLogging.getErrMsgId(),
 					"DB Error in 50_70 Process while generating tar file, Error Details:"
 							+ sql.getMessage() + ":" + sql.getCause());
+			nIDs.add(notifID);
 		} catch (IOException e) {
-			pimsLogging.logMessage(batchid, null, null, pimsLogging.getSequence(),
+			notifID = pimsLogging.logMessage(batchid, null, null, pimsLogging.getSequence(),
 					pimsLogging.getPriorityHigh(), pimsLogging.getErrMsgId(),
 					"Error in 50_70 Process while generating tar file, Error Details:"
 							+ e.getMessage() + ":" + e.getCause());
+			nIDs.add(notifID);
 		}
 
 	}
@@ -371,7 +378,7 @@ public class PIMSProcess_50_70 {
 			if (invfinalBlob != null)
 				mBlobs.put("INV", invfinalBlob);
 		} catch (SQLException sql) {
-			pimsLogging.logMessage(
+			notifID = pimsLogging.logMessage(
 					batchid,
 					serialNumber,
 					null,
@@ -381,9 +388,10 @@ public class PIMSProcess_50_70 {
 					"DB Error in 50_70 Process batchid:" + batchid
 							+ ", Error Details:" + sql.getMessage() + ":"
 							+ sql.getCause());
+			nIDs.add(notifID);
 
 		} catch (Exception e) {
-			pimsLogging.logMessage(
+			notifID = pimsLogging.logMessage(
 					batchid,
 					serialNumber,
 					null,
@@ -393,6 +401,7 @@ public class PIMSProcess_50_70 {
 					"Error in 50_70 Process batchid:" + batchid
 							+ ", Error Details:" + e.getMessage() + ":"
 							+ e.getCause());
+			nIDs.add(notifID);
 		}
 		return mBlobs;
 	}

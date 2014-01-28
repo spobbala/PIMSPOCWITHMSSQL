@@ -11,15 +11,17 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.HashMap;
+import java.util.LinkedHashSet;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Properties;
+import java.util.Set;
 
 public class PIMSProcess_17_20 {
 	private PIMSLogging pimsLogging = null;
 	private Connection pimsCon;
 	private Properties propFile;
-
+	private Set<Integer> nIDs = new LinkedHashSet<Integer>();
+	private int notifID = 0;
 	public PIMSProcess_17_20(Connection lclCon, Properties propFile) {
 		this.pimsCon = lclCon;
 		this.propFile = propFile;
@@ -41,11 +43,11 @@ public class PIMSProcess_17_20 {
 			while (rSet.next()) {
 				this.process_17_20(rSet.getInt("BATCH_ID"));
 
-				mailProc.generateEmail(rSet.getInt("BATCH_ID"),
+				mailProc.generateEmail(rSet.getInt("BATCH_ID"), nIDs,
 						PIMSConstants.PROCESS17_20);
 			}
 		} catch (SQLException sql) {
-			pimsLogging.logMessage(
+			notifID = pimsLogging.logMessage(
 					batchid,
 					null,
 					null,
@@ -54,6 +56,7 @@ public class PIMSProcess_17_20 {
 					pimsLogging.getErrMsgId(),
 					"DB Error in 17_20 Process, Error Details:"
 							+ sql.getMessage());
+			nIDs.add(notifID);
 		} finally {
 			DBConnectionFactory.close(this.pimsCon, pstmt, rSet);
 		}
@@ -74,9 +77,12 @@ public class PIMSProcess_17_20 {
 
 		PreparedStatement pstmt = null;
 		ResultSet rSet = null;
-		pimsLogging.logMessage(batchid, null, null, pimsLogging.getSequence(),
+		ResultSet rSet1 = null;
+		
+		notifID = pimsLogging.logMessage(batchid, null, null, pimsLogging.getSequence(),
 				pimsLogging.getPriorityLow(), pimsLogging.getTrackingMsgId(),
 				PIMSConstants.MSG_START_17_20);
+		nIDs.add(notifID);
 		try {
 			pstmt = DBConnectionFactory.prepareStatement(pimsCon,
 					PIMSConstants.QUERYBDET_17_20, batchid);
@@ -85,11 +91,12 @@ public class PIMSProcess_17_20 {
 				serialNumber = rSet.getString("DHCT_SN");
 				mValues = this.getSNAttribs(serialNumber);
 				if (mValues.get("SMSN") == null) {
-					pimsLogging.logMessage(batchid, serialNumber, null,
+					notifID = pimsLogging.logMessage(batchid, serialNumber, null,
 							pimsLogging.getSequence(),
 							pimsLogging.getPriorityHigh(),
 							pimsLogging.getErrMsgId(),
 							PIMSConstants.MSG_ERRSMSN_17_20);
+					nIDs.add(notifID);
 					uStatus = false;
 				}
 				String mfgID = null;
@@ -163,8 +170,15 @@ public class PIMSProcess_17_20 {
 
 				if (uStatus) {
 					count++;
-					// this.insertProductTable(batchid, mValues,
-					// PIMSConstants.INSERTQUERY_17_20);
+					pstmt = DBConnectionFactory.prepareStatement(pimsCon,
+							PIMSConstants.QUERYPRODUCT_17_20, serialNumber, mValues.get("SN"));
+					rSet1 = pstmt.executeQuery();
+					while(rSet1.next()){
+					System.out.println(rSet1.getString("DHCT_SN"));
+					pstmt = DBConnectionFactory.prepareStatement(pimsCon,
+							PIMSConstants.DELETEQUERY_17_20, rSet1.getString("DHCT_SN"));
+					pstmt.executeUpdate();
+					}
 					pstmt = DBConnectionFactory.prepareStatement(pimsCon,
 							PIMSConstants.INSERTQUERY_17_20);
 					pstmt.setString(1, mValues.get("SN")); // DHCT_SN
@@ -178,7 +192,7 @@ public class PIMSProcess_17_20 {
 					pstmt.executeUpdate();
 					if (comboFlag) {
 						pstmt = DBConnectionFactory.prepareStatement(pimsCon,
-								PIMSConstants.UPDATEQUERY_17_20);
+								PIMSConstants.UPDATEDETQUERY_17_20);
 						pstmt.setString(1, mValues.get("SN"));
 						pstmt.setString(2, mValues.get("SMSN"));
 						pstmt.setString(3, mValues.get("MACADDR"));
@@ -188,6 +202,7 @@ public class PIMSProcess_17_20 {
 						pstmt.setString(7, mValues.get("MATNO"));
 						pstmt.setString(8, mValues.get("CCID"));
 						pstmt.setString(9, mValues.get("SN"));
+						pstmt.setString(9, "COMBO");
 						pstmt.setString(10, serialNumber);
 						pstmt.setInt(11, batchid);
 						pstmt.setString(12, serialNumber);
@@ -196,15 +211,15 @@ public class PIMSProcess_17_20 {
 				}
 				mValues.clear();
 			}
-			DBConnectionFactory.close(pstmt, rSet);
 			mapID.clear();
 			if (uStatus) {
 
-				pimsLogging.logMessage(batchid, null, null,
+				notifID = pimsLogging.logMessage(batchid, null, null,
 						pimsLogging.getSequence(),
 						pimsLogging.getPriorityLow(),
 						pimsLogging.getTrackingMsgId(),
 						"Total records updated in Product Table:" + count);
+				nIDs.add(notifID);
 				pstmt = DBConnectionFactory.prepareStatement(pimsCon,
 						PIMSConstants.UPDATEBQUERY, PIMSConstants.STATUS_20,
 						batchid);
@@ -213,7 +228,7 @@ public class PIMSProcess_17_20 {
 			}else
 				pimsCon.rollback();
 		} catch (SQLException sql) {
-			pimsLogging.logMessage(
+			notifID = pimsLogging.logMessage(
 					batchid,
 					null,
 					null,
@@ -222,8 +237,9 @@ public class PIMSProcess_17_20 {
 					pimsLogging.getErrMsgId(),
 					"DB Error in 17_20 Process, Error Details:"
 							+ sql.getMessage());
+			nIDs.add(notifID);
 		} catch (Exception e) {
-			pimsLogging.logMessage(
+			notifID = pimsLogging.logMessage(
 					batchid,
 					null,
 					null,
@@ -232,8 +248,10 @@ public class PIMSProcess_17_20 {
 					pimsLogging.getErrMsgId(),
 					"Exception in 17_20 Process, Error Details:"
 							+ e.getMessage());
+			nIDs.add(notifID);
 
 		} finally {
+			DBConnectionFactory.close(rSet1);
 			DBConnectionFactory.close(pstmt, rSet);
 		}
 	}
@@ -253,7 +271,10 @@ public class PIMSProcess_17_20 {
 				PIMSConstants.QUERYSNGET, serialNumber);
 		rSet1 = pstmt.executeQuery();
 		while (rSet1.next()) {
+			mValues.put("SN", serialNumber);
 			mValues.put("MATNO", rSet1.getString("ITEM_NUMBER"));
+			mValues.put("TYPE", "NORMAL");
+			
 			switch (rSet1.getInt("ATTRIBUTE_ID")) {
 			case 5: // MFGDATE
 				mValues.put("MFGDATE", rSet1.getString("ATTRIBUTE_VALUE"));

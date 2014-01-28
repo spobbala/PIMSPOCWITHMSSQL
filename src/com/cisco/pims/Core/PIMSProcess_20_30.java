@@ -24,7 +24,8 @@ public class PIMSProcess_20_30 {
 	private Connection pimsCon;
 	private Properties propFile;
 	private PIMSHelper helper;
-	
+	private Set<Integer> nIDs = new LinkedHashSet<Integer>();
+	private int notifID = 0;
 	public PIMSProcess_20_30(Connection lclCon, Properties propFile) {
 		this.pimsCon = lclCon;
 		this.propFile = propFile;
@@ -47,11 +48,11 @@ public class PIMSProcess_20_30 {
 		while (rSet.next()) {
 			this.generateNothingBlob_20_30(rSet
 					.getInt("BATCH_ID"));
-			mailProc.generateEmail(rSet.getInt("BATCH_ID"),
+			mailProc.generateEmail(rSet.getInt("BATCH_ID"),nIDs,
 					PIMSConstants.PROCESS20_30);
 		}
 		}catch (SQLException sql) {
-			pimsLogging.logMessage(
+			notifID = pimsLogging.logMessage(
 					batchid,
 					null,
 					null,
@@ -60,6 +61,7 @@ public class PIMSProcess_20_30 {
 					pimsLogging.getErrMsgId(),
 					"DB Error in 20_30 Process, Error Details:"
 							+ sql.getMessage());
+			nIDs.add(notifID);
 		} finally {
 			DBConnectionFactory.close(this.pimsCon, pstmt, rSet);
 		}
@@ -84,9 +86,10 @@ public class PIMSProcess_20_30 {
 		PreparedStatement pstmt = null;
 		ResultSet rSet = null;
 
-		pimsLogging.logMessage(batchid, null, null, pimsLogging.getSequence(),
+		notifID = pimsLogging.logMessage(batchid, null, null, pimsLogging.getSequence(),
 				pimsLogging.getPriorityLow(), pimsLogging.getTrackingMsgId(),
 				PIMSConstants.MSG_START_20_30);
+		nIDs.add(notifID);
 		try {
 			pstmt = DBConnectionFactory.prepareStatement(pimsCon,
 					PIMSConstants.QUERYPROD_20_30, batchid);
@@ -173,13 +176,14 @@ public class PIMSProcess_20_30 {
 						batchid);
 				pstmt.executeUpdate();
 				pimsCon.commit();
-				pimsLogging.logMessage(batchid, null, null, pimsLogging.getSequence(),
+				notifID = pimsLogging.logMessage(batchid, null, null, pimsLogging.getSequence(),
 						pimsLogging.getPriorityLow(),
 						pimsLogging.getSuccessMsgId(),
 						"Nothing Blob updated for the batch id:" + batchid);
+				nIDs.add(notifID);
 			}
 		} catch (SQLException sql) {
-			pimsLogging.logMessage(
+			notifID = pimsLogging.logMessage(
 					batchid,
 					serialNumber,
 					null,
@@ -188,8 +192,9 @@ public class PIMSProcess_20_30 {
 					pimsLogging.getErrMsgId(),
 					"DB Error in 20_30 Process, Error Details:"
 							+ sql.getMessage());
+			nIDs.add(notifID);
 		} catch (Exception e) {
-			pimsLogging.logMessage(
+			notifID = pimsLogging.logMessage(
 					batchid,
 					serialNumber,
 					null,
@@ -198,6 +203,7 @@ public class PIMSProcess_20_30 {
 					pimsLogging.getErrMsgId(),
 					"Exception in 20_30 Process, Error Details:"
 							+ e.getMessage());
+			nIDs.add(notifID);
 			e.printStackTrace();
 
 		} finally {
@@ -223,11 +229,12 @@ public class PIMSProcess_20_30 {
 			}
 			DBConnectionFactory.close(pstmt, rSet);
 			if (cnt == 0) {
-				pimsLogging.logMessage(batchid, serialNumber, null,
+				notifID = pimsLogging.logMessage(batchid, serialNumber, null,
 						pimsLogging.getSequence(),
 						pimsLogging.getPriorityHigh(),
 						pimsLogging.getErrMsgId(),
 						PIMSConstants.MSG_ERRCERT_20_30);
+				nIDs.add(notifID);
 			}
 			cnt = 0;
 			pstmt = DBConnectionFactory.prepareStatement(pimsCon,
@@ -240,11 +247,12 @@ public class PIMSProcess_20_30 {
 			}
 			DBConnectionFactory.close(pstmt, rSet);
 			if (cnt == 0)
-				pimsLogging.logMessage(batchid, serialNumber, null,
+				notifID = pimsLogging.logMessage(batchid, serialNumber, null,
 						pimsLogging.getSequence(),
 						pimsLogging.getPriorityHigh(),
 						pimsLogging.getErrMsgId(),
 						PIMSConstants.MSG_ERRSACERT_20_30);
+			nIDs.add(notifID);
 
 			cnt = 0;
 			pstmt = DBConnectionFactory.prepareStatement(pimsCon,
@@ -257,19 +265,21 @@ public class PIMSProcess_20_30 {
 			}
 			DBConnectionFactory.close(pstmt, rSet);
 			if (cnt == 0)
-				pimsLogging.logMessage(batchid, serialNumber, null,
+				notifID = pimsLogging.logMessage(batchid, serialNumber, null,
 						pimsLogging.getSequence(),
 						pimsLogging.getPriorityHigh(),
 						pimsLogging.getErrMsgId(),
 						PIMSConstants.MSG_ERRCKCERT_20_30);
+			nIDs.add(notifID);
 
 		} catch (SQLException sql) {
 			sql.printStackTrace();
-			pimsLogging.logMessage(batchid, serialNumber, null,
+			notifID = pimsLogging.logMessage(batchid, serialNumber, null,
 					pimsLogging.getSequence(), pimsLogging.getPriorityHigh(),
 					pimsLogging.getErrMsgId(),
 					"DB Error in 20_30 Process while reading certificates data, Error Details:"
 							+ sql.getMessage());
+			nIDs.add(notifID);
 		}
 		return cValues;
 
@@ -279,14 +289,17 @@ public class PIMSProcess_20_30 {
 		PreparedStatement updateBatch = null;
 		try {
 			updateBatch = DBConnectionFactory.prepareStatement(pimsCon,
-					updateQuery, nothingBlob, batchid);
+					updateQuery);
+			updateBatch.setBytes(1, nothingBlob);
+			updateBatch.setInt(2, batchid);
 			updateBatch.executeUpdate();
 			pimsCon.commit();
 		} catch (SQLException sql) {
-			pimsLogging.logMessage(batchid, null, null, pimsLogging.getSequence(),
+			notifID = pimsLogging.logMessage(batchid, null, null, pimsLogging.getSequence(),
 					pimsLogging.getPriorityHigh(), pimsLogging.getErrMsgId(),
 					"Error while updating Nothing Blob for the batch id:"
 							+ batchid + ", Error Details:" + sql.getMessage());
+			nIDs.add(notifID);
 		} finally {
 			DBConnectionFactory.close(updateBatch);
 		}
@@ -343,20 +356,22 @@ public class PIMSProcess_20_30 {
 				}
 
 				if (status.contains(PIMSConstants.FILESTATUS)) {
-					pimsLogging.logMessage(batchID, null, null,
+					notifID = pimsLogging.logMessage(batchID, null, null,
 							pimsLogging.getSequence(),
 							pimsLogging.getPriorityLow(),
 							pimsLogging.getSuccessMsgId(),
 							"Nothing Blob sent successfully with fileName: "
 									+ fileName + " to Location " + toLocation
 									+ " on server:" + serverName);
+					nIDs.add(notifID);
 				}
 			}
 		} catch (SQLException sql) {
-			pimsLogging.logMessage(batchID, null, null, pimsLogging.getSequence(),
+			notifID = pimsLogging.logMessage(batchID, null, null, pimsLogging.getSequence(),
 					pimsLogging.getPriorityHigh(), pimsLogging.getErrMsgId(),
 					"DB Error in 20_30 Process while FTPing Nothing Blob to Site ID"
 							+ siteID + ", Error Details:" + sql.getMessage());
+			nIDs.add(notifID);
 		} finally {
 			DBConnectionFactory.close(pstmt, rSet);
 		}

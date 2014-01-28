@@ -78,6 +78,16 @@ public class DBConnectionFactory {
         return preparedStatement;
     }
 
+    public static PreparedStatement prepareStatement
+    (Connection connection, boolean genKeys, String sql, Object... values)
+        throws SQLException
+{
+    	PreparedStatement preparedStatement = connection.prepareStatement(sql,
+                genKeys ? Statement.RETURN_GENERATED_KEYS : Statement.NO_GENERATED_KEYS);
+    setValues(preparedStatement, values);
+    return preparedStatement;
+}
+
     /**
      * Set the given parameter values in the given PreparedStatement.
      * @param connection The PreparedStatement to set the given parameter values in.

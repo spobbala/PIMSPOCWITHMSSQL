@@ -13,14 +13,18 @@ import java.sql.SQLException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Properties;
+import java.util.Set;
 
 public class PIMSProcess_40_50 {
 	private PIMSLogging pimsLogging = null;
 	private Connection pimsCon;
 	private Properties propFile;
 	private PIMSHelper helper;
+	private Set<Integer> nIDs = new LinkedHashSet<Integer>();
+	private int notifID = 0;
 
 	public PIMSProcess_40_50(Connection lclCon, Properties propFile) {
 		this.pimsCon = lclCon;
@@ -44,12 +48,12 @@ public class PIMSProcess_40_50 {
 			while (rSet.next()) {
 				this.process_40_50(rSet.getInt("BATCH_ID"),
 						rSet.getBytes("EMM1_BLOB"), rSet.getBytes("EMM2_BLOB"));
-				mailProc.generateEmail(rSet.getInt("BATCH_ID"),
+				mailProc.generateEmail(rSet.getInt("BATCH_ID"), nIDs,
 						PIMSConstants.PROCESS40_50);
 			}
 
 		} catch (SQLException sql) {
-			pimsLogging.logMessage(
+			notifID = pimsLogging.logMessage(
 					batchid,
 					null,
 					null,
@@ -58,6 +62,7 @@ public class PIMSProcess_40_50 {
 					pimsLogging.getErrMsgId(),
 					"DB Error in 20_30 Process, Error Details:"
 							+ sql.getMessage());
+			nIDs.add(notifID);
 		} finally {
 			DBConnectionFactory.close(this.pimsCon, pstmt, rSet);
 		}
@@ -87,10 +92,11 @@ public class PIMSProcess_40_50 {
 		byte[] raw1 = new byte[44];
 		byte[] byteValue = null;
 		try {
-			pimsLogging.logMessage(batchid, serialNumber, null,
+			notifID = pimsLogging.logMessage(batchid, serialNumber, null,
 					pimsLogging.getSequence(), pimsLogging.getPriorityHigh(),
 					pimsLogging.getTrackingMsgId(),
 					"Entered 40_50 Process batchid:" + batchid);
+			nIDs.add(notifID);
 
 			while ((i * 339) < emm1.length) {
 				len = i * 339;
@@ -258,13 +264,14 @@ public class PIMSProcess_40_50 {
 					batchid);
 			pstmt.executeUpdate();
 			pimsCon.commit();
-			pimsLogging.logMessage(batchid, serialNumber, null,
+			notifID = pimsLogging.logMessage(batchid, serialNumber, null,
 					pimsLogging.getSequence(), pimsLogging.getPriorityHigh(),
 					pimsLogging.getSuccessMsgId(),
 					"Process 40_50 Completed, Batchid:" + batchid);
+			nIDs.add(notifID);
 
 		} catch (SQLException sql) {
-			pimsLogging.logMessage(
+			notifID = pimsLogging.logMessage(
 					batchid,
 					serialNumber,
 					null,
@@ -273,8 +280,9 @@ public class PIMSProcess_40_50 {
 					pimsLogging.getErrMsgId(),
 					"Exception in 40_50 Process, Error Details:"
 							+ sql.getMessage());
+			nIDs.add(notifID);
 		} catch (Exception e) {
-			pimsLogging.logMessage(
+			notifID = pimsLogging.logMessage(
 					batchid,
 					serialNumber,
 					null,
@@ -283,6 +291,7 @@ public class PIMSProcess_40_50 {
 					pimsLogging.getErrMsgId(),
 					"Exception in 40_50 Process, Error Details:"
 							+ e.getMessage());
+			nIDs.add(notifID);
 		} finally {
 			DBConnectionFactory.close(pstmt);
 		}

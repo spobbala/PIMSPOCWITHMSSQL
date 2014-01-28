@@ -75,10 +75,12 @@ public interface PIMSConstants {
 	public static final String QUERYBATCH = "select batch_id from dbo.pims_batch_header where batch_id = ? "
 												 + "and batch_status_cd = ?"; 
 	public static final String QUERYSTATUS = "select batch_id from dbo.pims_batch_header where batch_status_cd = ?";
+	public static final String DELETEQUERY_17_20 = "delete from dbo.pims_product where dhct_sn = ?";
+	public static final String QUERYPRODUCT_17_20 = "select dhct_sn from dbo.pims_product where dhct_sn = ? or dhct_sn = ?";
 	public static final String QUERYBDET_17_20 = "select b.batch_id, b.ship_to_cust_id, d.dhct_sn from dbo.pims_batch_header b "
 												+ "join dbo.pims_batch_detail d"
 												+ " on b.batch_id = d.batch_id where b.batch_id = ?";
-	public static final String UPDATEQUERY_17_20 = "update dbo.pims_batch_detail set "
+	public static final String UPDATEDETQUERY_17_20 = "update dbo.pims_batch_detail set "
 												 + "DHCT_SN = ?, "
 												 + "EMM_SMSN = ?, "
 												 + "EMM_MACADDRESS = ?, "
@@ -88,7 +90,8 @@ public interface PIMSConstants {
 												 + "EMM_MATLNO = ?, "
 												 + "EMM_CCARD_ID = ?, "
 												 + "EMM_CABLECARD_SN = ?, "
-												 + "EMM_ORIGINALSN = ? "
+												 + "EMM_ORIGINALSN = ?, "
+												 + "EMM_TYPEFLAG = ? "
 												 + "where BATCH_ID = ? "
 												 + "AND DHCT_SN = ?";
 	public static final String INSERTQUERY_17_20 = "Insert into dbo.pims_product (DHCT_SN, SM_SN, MAC_ADDR, "
@@ -162,7 +165,8 @@ public interface PIMSConstants {
 
 	public static final String QUERY_50_70 = "select batch_id, delivery_id, info1 from dbo.pims_batch_header "
 											+ "where batch_status_cd = ?";
-	public static final String QUERYPROD50_70 = "SELECT distinct d.dhct_sn, p.cust_caa_id, p.mac_addr, "
+	public static final String QUERYPROD50_70 = "SELECT distinct d.dhct_sn, d.pallet_id, "
+												+ "p.cust_caa_id, p.mac_addr, "
 												+ "p.emm_file, "
 												+ "p.MODEL, "
 												+ "p.hw_rev, "
@@ -183,18 +187,18 @@ public interface PIMSConstants {
 			+ " END) = t.mac_ref ) )sq, PIMS_TYPE_FILES t WHERE t.filename = sq.filename";
 
 	public static final String LOGUPDATEQUERY = "INSERT INTO dbo.pims_error_detail ("
-											+ "NOTIFICATION_ID, " + "BATCH_ID, " + "DHCT_SN, "
+											+ "BATCH_ID, " + "DHCT_SN, "
 											+ "ITEM_NO, " + "SEQ_NO, " + "TYPE_MSG, "
 											+ "CREATED_DATE_TIME, " + "MESSAGE_ID, "
 											+ "MESSAGE_DETAIL, " + "ERROR_DETAIL) " + "VALUES("
-											+ "NEXT VALUE FOR dbo.SEQ_NOTIFICATION_ID, ?, ?, ?, ?, ?, SYSDATETIME(), ?, ?, ?)";
+											+ "?, ?, ?, ?, ?, SYSDATETIME(), ?, ?, ?)";
 	public static final String LOGINITQUERY = "SELECT @@SERVERNAME dbHost, DB_NAME() dbName, SCHEMA_NAME() dbSchema, "
 			+ "@@SPID dbSessionId, SYSTEM_USER dbSessionUser, HOST_NAME() terminal, PROGRAM_NAME() module";
 	
 	public static final String UPDATEPRODQUERY = "update dbo.pims_product set emm_file = ? , "
 			+ "										  emm_date = ?,"
 			+ "										  emm_file_size  = ? " + " where dhct_sn = ?";
-	public static final String QUERYMAIL = "select * from dbo.pims_error_detail where batch_id = ? and created_date_time > DateAdd(MINUTE,-5,getdate())";
+	public static final String QUERYMAIL = "select * from dbo.pims_error_detail where notification_id in ";
 	public static final String MSG_START_17_20 = "Entered 17_20 Process";
 	public static final String MSG_ERRSMSN_17_20 = "Missing Secure Micro SN";
 	public static final String MSG_START_20_30 = "Entered 20_30 Process";

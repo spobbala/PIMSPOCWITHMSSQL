@@ -208,13 +208,15 @@ public class PIMSLogging {
 				DBConnectionFactory.close(pstmt, rSet);
 			}
 	}
-	public void logMessage(int iBatchId, String iDhctSn, String iItemNo,
+	public int logMessage(int iBatchId, String iDhctSn, String iItemNo,
 			int iSeqNo, String iPriority, Integer iMessageId,
 			String iMessageDetails) {
 		PreparedStatement pstmt = null;
+		ResultSet rSet = null;
 		String messageType;
 		String errorDump;
 		int messageId;
+		int notificationID = 0;
 		if (iMessageId == null) {
 			messageId = 0;
 		} else {
@@ -234,16 +236,20 @@ public class PIMSLogging {
 		// Get Environment Details of DB and its Connection
 		try {
 			errorDump = (messageId == getErrMsgId()) ? getErrorReport(iBatchId) : null;
-			pstmt = DBConnectionFactory.prepareStatement(dbCon,
+			pstmt = DBConnectionFactory.prepareStatement(dbCon,true,
 					PIMSConstants.LOGUPDATEQUERY, iBatchId, iDhctSn, iItemNo,
 					iSeqNo, messageType, messageId, iMessageDetails, errorDump);
 			pstmt.executeUpdate();
 			dbCon.commit();
+			rSet = pstmt.getGeneratedKeys();
+			while(rSet.next())
+			    notificationID = rSet.getInt(1);
 		} catch (SQLException e) {
 			System.out.println("Error while Updating Log message");
 		} finally {
-			DBConnectionFactory.close(pstmt);
+			DBConnectionFactory.close(pstmt,rSet);
 		}
+		return notificationID;
 	}
 	private String getErrorReport(int batchid) {
 		String errMsg = null;
