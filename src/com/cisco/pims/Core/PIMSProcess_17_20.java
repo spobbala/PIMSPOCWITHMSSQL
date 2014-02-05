@@ -11,17 +11,13 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.HashMap;
-import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Properties;
-import java.util.Set;
 
 public class PIMSProcess_17_20 {
 	private PIMSLogging pimsLogging = null;
 	private Connection pimsCon;
 	private Properties propFile;
-	private Set<Integer> nIDs = new LinkedHashSet<Integer>();
-	private int notifID = 0;
 	public PIMSProcess_17_20(Connection lclCon, Properties propFile) {
 		this.pimsCon = lclCon;
 		this.propFile = propFile;
@@ -41,28 +37,24 @@ public class PIMSProcess_17_20 {
 			rSet = pstmt.executeQuery();
 			SendMailDAO mailProc = new SendMailDAO(pimsCon, propFile);
 			while (rSet.next()) {
-				this.process_17_20(rSet.getInt("BATCH_ID"));
+				this.process_17_20(rSet.getInt("BATCH_ID"), rSet.getString("SHIP_TO_CUST_ID"));
 
-				mailProc.generateEmail(rSet.getInt("BATCH_ID"), nIDs,
+				mailProc.generateEmail(rSet.getInt("BATCH_ID"), pimsLogging.getNotificationIDSet(),
 						PIMSConstants.PROCESS17_20);
+				pimsLogging.clearNotificationID();
 			}
 		} catch (SQLException sql) {
-			notifID = pimsLogging.logMessage(
+			pimsLogging.logErrorMessage(
 					batchid,
 					null,
-					null,
-					pimsLogging.getSequence(),
-					pimsLogging.getPriorityHigh(),
-					pimsLogging.getErrMsgId(),
 					"DB Error in 17_20 Process, Error Details:"
 							+ sql.getMessage());
-			nIDs.add(notifID);
 		} finally {
 			DBConnectionFactory.close(this.pimsCon, pstmt, rSet);
 		}
 	}
 
-	public void process_17_20(int batchid) {
+	private void process_17_20(int batchid, String ship_to_cust) {
 		Map<String, String> mValues = new HashMap<String, String>();
 		Map<String, String> mapID = new HashMap<String, String>();
 
@@ -72,6 +64,7 @@ public class PIMSProcess_17_20 {
 
 		int cnt = 0;
 		int count = 0;
+		int pCount = 0;
 
 		boolean comboFlag = false;
 
@@ -79,24 +72,20 @@ public class PIMSProcess_17_20 {
 		ResultSet rSet = null;
 		ResultSet rSet1 = null;
 		
-		notifID = pimsLogging.logMessage(batchid, null, null, pimsLogging.getSequence(),
-				pimsLogging.getPriorityLow(), pimsLogging.getTrackingMsgId(),
-				PIMSConstants.MSG_START_17_20);
-		nIDs.add(notifID);
+		pimsLogging.logTrackingMessage(batchid, null, PIMSConstants.MSG_START_17_20);
+		
 		try {
 			pstmt = DBConnectionFactory.prepareStatement(pimsCon,
 					PIMSConstants.QUERYBDET_17_20, batchid);
 			rSet = pstmt.executeQuery();
 			while (rSet.next()) {
+				pCount++;
 				serialNumber = rSet.getString("DHCT_SN");
 				mValues = this.getSNAttribs(serialNumber);
 				if (mValues.get("SMSN") == null) {
-					notifID = pimsLogging.logMessage(batchid, serialNumber, null,
-							pimsLogging.getSequence(),
-							pimsLogging.getPriorityHigh(),
-							pimsLogging.getErrMsgId(),
+					pimsLogging.logErrorMessage(batchid, serialNumber, 
 							PIMSConstants.MSG_ERRSMSN_17_20);
-					nIDs.add(notifID);
+					
 					uStatus = false;
 				}
 				String mfgID = null;
@@ -123,23 +112,18 @@ public class PIMSProcess_17_20 {
 					mapID.put(tempStr, mfgID);
 				}
 
-				custCAAID = mapID.get(rSet.getString("SHIP_TO_CUST_ID"));
+				custCAAID = mapID.get(ship_to_cust);
 				if (custCAAID == null) {
-					custCAAID = this.getCustID(rSet
-							.getString("SHIP_TO_CUST_ID"));
-					mapID.put(rSet.getString("SHIP_TO_CUST_ID"), custCAAID);
+					custCAAID = this.getCustID(ship_to_cust);
+					mapID.put(ship_to_cust, custCAAID);
 				}
 				if (custCAAID == null) {
 					pimsLogging
-							.logMessage(
+							.logErrorMessage(
 									batchid,
 									serialNumber,
-									null,
-									pimsLogging.getSequence(),
-									pimsLogging.getPriorityHigh(),
-									pimsLogging.getErrMsgId(),
 									"No CUSTCAAID setup for SHIP_TO:"
-											+ rSet.getString("SHIP_TO_CUST_ID")
+											+ ship_to_cust
 											+ " for Serial Number:"
 											+ serialNumber + " in Batch ID:"
 											+ rSet.getInt("BATCH_ID"));
@@ -147,13 +131,9 @@ public class PIMSProcess_17_20 {
 				}
 				if (mfgID == null) {
 					pimsLogging
-							.logMessage(
+							.logErrorMessage(
 									batchid,
 									serialNumber,
-									null,
-									pimsLogging.getSequence(),
-									pimsLogging.getPriorityHigh(),
-									pimsLogging.getErrMsgId(),
 									"No MFGID setup for model:"
 											+ mValues.get("MODEL")
 											+ " and HWVER/MATREVLEVEL "
@@ -174,7 +154,6 @@ public class PIMSProcess_17_20 {
 							PIMSConstants.QUERYPRODUCT_17_20, serialNumber, mValues.get("SN"));
 					rSet1 = pstmt.executeQuery();
 					while(rSet1.next()){
-					System.out.println(rSet1.getString("DHCT_SN"));
 					pstmt = DBConnectionFactory.prepareStatement(pimsCon,
 							PIMSConstants.DELETEQUERY_17_20, rSet1.getString("DHCT_SN"));
 					pstmt.executeUpdate();
@@ -212,43 +191,36 @@ public class PIMSProcess_17_20 {
 				mValues.clear();
 			}
 			mapID.clear();
-			if (uStatus) {
+			if (uStatus && pCount > 0) {
 
-				notifID = pimsLogging.logMessage(batchid, null, null,
-						pimsLogging.getSequence(),
-						pimsLogging.getPriorityLow(),
-						pimsLogging.getTrackingMsgId(),
+				pimsLogging.logSuccessMessage(batchid, null, 
 						"Total records updated in Product Table:" + count);
-				nIDs.add(notifID);
+				
 				pstmt = DBConnectionFactory.prepareStatement(pimsCon,
 						PIMSConstants.UPDATEBQUERY, PIMSConstants.STATUS_20,
 						batchid);
 				pstmt.executeUpdate();
 				pimsCon.commit();
-			}else
+			}else if(pCount > 0)
 				pimsCon.rollback();
+			if(pCount==0){
+				pimsLogging.logErrorMessage(batchid, null, 
+						"No Serial numbers data found in Batch Detail Table");
+			}
 		} catch (SQLException sql) {
-			notifID = pimsLogging.logMessage(
+			pimsLogging.logErrorMessage(
 					batchid,
 					null,
-					null,
-					pimsLogging.getSequence(),
-					pimsLogging.getPriorityHigh(),
-					pimsLogging.getErrMsgId(),
 					"DB Error in 17_20 Process, Error Details:"
 							+ sql.getMessage());
-			nIDs.add(notifID);
+			
 		} catch (Exception e) {
-			notifID = pimsLogging.logMessage(
+			pimsLogging.logErrorMessage(
 					batchid,
 					null,
-					null,
-					pimsLogging.getSequence(),
-					pimsLogging.getPriorityHigh(),
-					pimsLogging.getErrMsgId(),
 					"Exception in 17_20 Process, Error Details:"
 							+ e.getMessage());
-			nIDs.add(notifID);
+			
 
 		} finally {
 			DBConnectionFactory.close(rSet1);
@@ -256,7 +228,7 @@ public class PIMSProcess_17_20 {
 		}
 	}
 
-	public Map<String, String> getSNAttribs(String serialNumber)
+	private Map<String, String> getSNAttribs(String serialNumber)
 			throws SQLException {
 		PreparedStatement pstmt = null;
 		ResultSet rSet1 = null;
@@ -325,7 +297,7 @@ public class PIMSProcess_17_20 {
 		return mValues;
 	}
 
-	public String getMfgID(String model, String hwverOrMatRev)
+	private String getMfgID(String model, String hwverOrMatRev)
 			throws SQLException {
 
 		String mfgID = null;
@@ -342,7 +314,7 @@ public class PIMSProcess_17_20 {
 		return mfgID;
 	}
 
-	public String getCustID(String shipToID) throws SQLException {
+	private String getCustID(String shipToID) throws SQLException {
 		String custID = null;
 
 		PreparedStatement pstmt = null;

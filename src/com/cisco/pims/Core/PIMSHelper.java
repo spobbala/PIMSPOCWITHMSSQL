@@ -19,6 +19,9 @@ import java.net.URI;
 import java.util.Deque;
 import java.util.LinkedList;
 
+//import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
+//import org.apache.commons.compress.archivers.tar.TarArchiveOutputStream;
+//import org.apache.commons.compress.utils.IOUtils;
 import org.xeustechnologies.jtar.TarEntry;
 import org.xeustechnologies.jtar.TarOutputStream;
 
@@ -68,7 +71,7 @@ public class PIMSHelper {
 		return result.toByteArray();
 	}
 
-	public static void zip(File directory, File zipfile) throws IOException {
+	public static void tar(File directory, File zipfile) throws IOException {
 		URI base = directory.toURI();
 		Deque<File> queue = new LinkedList<File>();
 		queue.push(directory);
@@ -96,7 +99,42 @@ public class PIMSHelper {
 			res.close();
 		}
 	}
-
+	/*
+	public static void tar1(File directory, File zipfile) throws IOException {
+		URI base = directory.toURI();
+		Deque<File> queue = new LinkedList<File>();
+		queue.push(directory);
+		fileDelete(zipfile);
+		OutputStream out = new FileOutputStream(zipfile);
+		TarArchiveOutputStream zout = new TarArchiveOutputStream(out);
+		try {
+			while (!queue.isEmpty()) {
+				directory = queue.pop();
+				for (File kid : directory.listFiles()) {
+					String name = base.relativize(kid.toURI()).getPath();
+					if (kid.isDirectory()) {
+						queue.push(kid);
+						name = name.endsWith("/") ? name : name + "/";
+			            zout.putArchiveEntry(new TarArchiveEntry(kid,name));
+			            zout.closeArchiveEntry();
+					} else {
+			            zout.putArchiveEntry(new TarArchiveEntry(kid,name));
+			            IOUtils.copy(new FileInputStream(kid), zout);
+		                zout.closeArchiveEntry();
+						}
+				}
+			}
+		} finally {
+			if(out!=null)
+				out.close();
+			if(zout!=null){
+                zout.finish();
+				zout.close();
+				System.out.println("Tar closed");
+			}
+		}
+	}
+	*/
 	private static void copy(InputStream in, OutputStream out) throws IOException {
 		byte[] buffer = new byte[1024];
 		while (true) {
@@ -143,5 +181,4 @@ public class PIMSHelper {
 			srcFile.delete();
 		}
 	}
-
 }

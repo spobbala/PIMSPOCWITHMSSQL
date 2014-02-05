@@ -7,5 +7,6 @@
 	<classpathentry kind="lib" path="C:/Users/spobbala/Desktop/Cassandra/lib/maverick-all.jar"/>
 	<classpathentry kind="lib" path="C:/Users/spobbala/Desktop/Cassandra/lib/jtar-1.1.jar"/>
 	<classpathentry kind="lib" path="C:/Users/spobbala/Desktop/Cassandra/lib/commons-net.jar"/>
+	<classpathentry kind="lib" path="C:/Users/spobbala/Desktop/Cassandra/lib/ojdbc5.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

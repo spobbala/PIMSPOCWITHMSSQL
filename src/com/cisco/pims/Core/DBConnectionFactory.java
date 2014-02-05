@@ -22,26 +22,24 @@ import java.sql.SQLException;
 import java.sql.Statement;
 
 public class DBConnectionFactory {
-	public Connection connect(String dbName, String server, String uName,
+	public Connection connect(String server, String uName,
 			String passWord) throws SQLException {
 		Connection con = null;
-		if(dbName==null ||
-		   server==null ||
+		if(server==null ||
 		   uName==null ||
 		   passWord==null)
 		{
 			System.out.println("Mandatory Parameters missing for DB Connection");
-			System.out.println("dbName=" +dbName);
 			System.out.println("server="+server);
 			System.out.println("uName="+uName);
 			System.out.println("Password=" +passWord);
 			System.exit(0);
 		}
-			try {
-				Class.forName("com.microsoft.sqlserver.jdbc.SQLServerDriver");
-			} catch (ClassNotFoundException e) {
-				e.printStackTrace();
-			}
+//			try {
+//				Class.forName("com.microsoft.sqlserver.jdbc.SQLServerDriver");
+//			} catch (ClassNotFoundException e) {
+//				e.printStackTrace();
+//			}
 			con = DriverManager.getConnection(server, uName, passWord);
 		return con;
 	}

@@ -10,6 +10,8 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.LinkedHashSet;
+import java.util.Set;
 
 public class PIMSLogging {
 	//Configuration Variables
@@ -29,9 +31,23 @@ public class PIMSLogging {
 	private String iEMMFailure;
 	private int sequence;
 	private Connection dbCon;
+	private int notifID;
+	private Set<Integer> nIDs = new LinkedHashSet<Integer>();
 	//Getters and Setters Methods for Configuration Variables
+	
+	public void addNotificationID(int id){
+		nIDs.add(id);
+	}
+	public Set<Integer> getNotificationIDSet(){
+		return nIDs;
+	}
 
-
+	public void setNotificationID(int id){
+		this.notifID = id;		
+	}
+	public int getNotificationID(){
+		return notifID;
+	}
 	public int getErrMsgId() {
 		return errMsgId;
 	}
@@ -208,7 +224,27 @@ public class PIMSLogging {
 				DBConnectionFactory.close(pstmt, rSet);
 			}
 	}
-	public int logMessage(int iBatchId, String iDhctSn, String iItemNo,
+	public void logSuccessMessage(int iBatchId, String dhctSN,
+			String iMessageDetails){
+		this.logMessage(iBatchId, dhctSN, null, this.getSequence(),
+				this.getPriorityLow(), this.getSuccessMsgId(),
+				iMessageDetails);
+	}
+	public void logTrackingMessage(int iBatchId, String dhctSN,
+			String iMessageDetails){
+		this.logMessage(iBatchId, dhctSN, null, this.getSequence(),
+				this.getPriorityLow(), this.getTrackingMsgId(),
+				iMessageDetails);
+	}
+
+	public void logErrorMessage(int iBatchId, String dhctSN, 
+			String iMessageDetails){
+		this.logMessage(iBatchId, dhctSN, null, this.getSequence(),
+				this.getPriorityHigh(), this.getErrMsgId(),
+				iMessageDetails);
+	}
+
+	public void logMessage(int iBatchId, String iDhctSn, String iItemNo,
 			int iSeqNo, String iPriority, Integer iMessageId,
 			String iMessageDetails) {
 		PreparedStatement pstmt = null;
@@ -216,7 +252,6 @@ public class PIMSLogging {
 		String messageType;
 		String errorDump;
 		int messageId;
-		int notificationID = 0;
 		if (iMessageId == null) {
 			messageId = 0;
 		} else {
@@ -242,14 +277,15 @@ public class PIMSLogging {
 			pstmt.executeUpdate();
 			dbCon.commit();
 			rSet = pstmt.getGeneratedKeys();
-			while(rSet.next())
-			    notificationID = rSet.getInt(1);
+			while(rSet.next()){
+			    this.setNotificationID(rSet.getInt(1));
+			    this.addNotificationID(rSet.getInt(1));
+			}
 		} catch (SQLException e) {
 			System.out.println("Error while Updating Log message");
 		} finally {
 			DBConnectionFactory.close(pstmt,rSet);
 		}
-		return notificationID;
 	}
 	private String getErrorReport(int batchid) {
 		String errMsg = null;
@@ -298,6 +334,9 @@ public class PIMSLogging {
 			DBConnectionFactory.close(pstmt);
 		}
 		return errMsg;
+	}
+	public void clearNotificationID() {
+		nIDs.clear();
 	}
 	
 	}

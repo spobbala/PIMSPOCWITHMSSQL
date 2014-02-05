@@ -17,7 +17,7 @@ public class PIMSProcess {
 	
 public static void main(String args[]) {
 		String osName = null;
-		Connection lclCon = null;
+		Connection pimsCon = null;
 		InputStream inStream = null;
 		DBConnectionFactory pimsDAO = new DBConnectionFactory();
 		String processName = null;
@@ -37,8 +37,7 @@ public static void main(String args[]) {
 				batchid = Integer.parseInt(args[1]);
 			} else {
 				System.out.println("Please pass arguments in below order:");
-				System.out.println("1. properties file Location.(Mandatory)");
-				System.out.println("2. Process Name.(Mandatory)");
+				System.out.println("1. Process Name.(Mandatory)");
 				System.out.println("2. Batch ID.(Optional)");
 			}
 		}
@@ -50,31 +49,30 @@ public static void main(String args[]) {
 			processName = args[0];
 			batchid = Integer.parseInt(args[1]);
 		} else
-			processName = "50_70";
-		
+			processName = "17_20";
 		try {
 			inStream = PIMSProcess.class
 					.getResourceAsStream("PIMSProperties.properties");
 				propFile.load(inStream);
 					inStream.close();
-			lclCon = pimsDAO.connect("mssql",
-					propFile.getProperty("MSSQLServer"),
+			pimsCon = pimsDAO.connect(propFile.getProperty("MSSQLServer"),
 					propFile.getProperty("DBUserName"),
 					propFile.getProperty("DBPassword"));
+//			pimsCon.setAutoCommit(false);
 			if (processName.equals("17_20")) { // 17_20 Process
-				PIMSProcess_17_20 proc17_20 = new PIMSProcess_17_20(lclCon, propFile);
+				PIMSProcess_17_20 proc17_20 = new PIMSProcess_17_20(pimsCon, propFile);
 				proc17_20.process(batchid);
 			} else if (processName.equals("20_30")) { // 20_30 Process
-				PIMSProcess_20_30 proc20_30 = new PIMSProcess_20_30(lclCon, propFile);
+				PIMSProcess_20_30 proc20_30 = new PIMSProcess_20_30(pimsCon, propFile);
 				proc20_30.process(batchid);
 			} else if (processName.equals("30_40")) { // 30_40 Process
-				PIMSProcess_30_40 proc30_40 = new PIMSProcess_30_40(lclCon, propFile);
+				PIMSProcess_30_40 proc30_40 = new PIMSProcess_30_40(pimsCon, propFile);
 				proc30_40.process(batchid);
 			} else if (processName.equals("40_50")) { // 40_50 Process
-				PIMSProcess_40_50 proc40_50 = new PIMSProcess_40_50(lclCon, propFile);
+				PIMSProcess_40_50 proc40_50 = new PIMSProcess_40_50(pimsCon, propFile);
 				proc40_50.process(batchid);
 			} else if (processName.equals("50_70")) { // 50_70 Process
-				PIMSProcess_50_70 proc50_70 = new PIMSProcess_50_70(lclCon, propFile);
+				PIMSProcess_50_70 proc50_70 = new PIMSProcess_50_70(pimsCon, propFile);
 				proc50_70.process(batchid);
 			} else {
 				System.out.println("Invalid process Name, valid values:");

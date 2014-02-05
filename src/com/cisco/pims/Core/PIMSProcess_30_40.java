@@ -15,18 +15,13 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.LinkedHashSet;
 import java.util.Properties;
-import java.util.Set;
 
 public class PIMSProcess_30_40 {
 	private PIMSLogging pimsLogging = null;
 	private Connection pimsCon;
 	private Properties propFile;
 	private PIMSHelper helper;
-	private Set<Integer> nIDs = new LinkedHashSet<Integer>();
-	private int notifID = 0;
-
 	public PIMSProcess_30_40(Connection lclCon, Properties propFile) {
 		this.pimsCon = lclCon;
 		this.propFile = propFile;
@@ -51,16 +46,15 @@ public class PIMSProcess_30_40 {
 			while (rSet.next()) {
 				tbatchid = rSet.getInt("BATCH_ID");
 				this.process_30_40(tbatchid);
-				mailProc.generateEmail(rSet.getInt("BATCH_ID"),nIDs, 
-						PIMSConstants.PROCESS40_50);
+				mailProc.generateEmail(rSet.getInt("BATCH_ID"),pimsLogging.getNotificationIDSet(), 
+						PIMSConstants.PROCESS30_40);
+				pimsLogging.clearNotificationID();
 			}
 		} catch (SQLException sql) {
-			notifID = pimsLogging.logMessage(tbatchid, null, null,
-					pimsLogging.getSequence(), pimsLogging.getPriorityHigh(),
-					pimsLogging.getErrMsgId(),
+			pimsLogging.logErrorMessage(tbatchid, null, 
 					"Error in 30_40 Process while upload blobs, Error Details:"
 							+ sql.getMessage());
-			nIDs.add(notifID);
+			
 		} finally {
 			DBConnectionFactory.close(pstmt, rSet);
 		}
@@ -81,19 +75,14 @@ public class PIMSProcess_30_40 {
 		helper = new PIMSHelper();
 
 		try {
-			notifID = pimsLogging.logMessage(batchid, null, null,
-					pimsLogging.getSequence(), pimsLogging.getPriorityLow(),
-					pimsLogging.getTrackingMsgId(), "Entered 30_40 Process");
-			nIDs.add(notifID);
+			pimsLogging.logSuccessMessage(batchid, null, "Entered 30_40 Process");
+			
 
 			filePath_30_40 = propFile.getProperty("FileLoc_30_40");
 			if (filePath_30_40 == null) {
-				notifID = pimsLogging.logMessage(batchid, null, null,
-						pimsLogging.getSequence(),
-						pimsLogging.getPriorityHigh(),
-						pimsLogging.getErrMsgId(),
+				pimsLogging.logErrorMessage(batchid, null, 
 						"Error in 30_40 Process, EMM in folder not configured");
-				nIDs.add(notifID);
+				
 				return;
 			}
 
@@ -106,24 +95,18 @@ public class PIMSProcess_30_40 {
 							new FileInputStream(currentFile));
 					result = helper.readAndClose(input);
 				} catch (FileNotFoundException e) {
-					notifID = pimsLogging.logMessage(batchid, null, null,
-							pimsLogging.getSequence(),
-							pimsLogging.getPriorityHigh(),
-							pimsLogging.getErrMsgId(),
+					pimsLogging.logErrorMessage(batchid, null, 
 							"Error in 30_40 Process, EMM1 file not found, Error Details:"
 									+ e.getMessage());
-					nIDs.add(notifID);
+					
 				}
 			}
 			if (result != null) {
 				this.loadNothingBlob(PIMSConstants.UPDATEQUERYEMM130_40,
 						result, batchid);
-				notifID = pimsLogging.logMessage(batchid, null, null,
-						pimsLogging.getSequence(),
-						pimsLogging.getPriorityLow(),
-						pimsLogging.getSuccessMsgId(),
+				pimsLogging.logSuccessMessage(batchid, null, 
 						"Loaded EMM1 Blob into table");
-				nIDs.add(notifID);
+				
 				currentFile.delete();
 				fileOne = true;
 			}
@@ -135,45 +118,36 @@ public class PIMSProcess_30_40 {
 							new FileInputStream(currentFile));
 					result = helper.readAndClose(input);
 				} catch (FileNotFoundException e) {
-					notifID = pimsLogging.logMessage(batchid, null, null,
-							pimsLogging.getSequence(),
-							pimsLogging.getPriorityHigh(),
-							pimsLogging.getErrMsgId(),
+					pimsLogging.logErrorMessage(batchid, null, 
 							"Error in 30_40 Process, EMM2 file not found, Error Details:"
 									+ e.getMessage());
-					nIDs.add(notifID);
+					
 				}
 			}
 			if (result != null) {
 				this.loadNothingBlob(PIMSConstants.UPDATEQUERYEMM230_40,
 						result, batchid);
-				notifID = pimsLogging.logMessage(batchid, null, null,
-						pimsLogging.getSequence(),
-						pimsLogging.getPriorityLow(),
-						pimsLogging.getSuccessMsgId(),
+				pimsLogging.logSuccessMessage(batchid, null, 
 						"Loaded EMM2 Blob into table");
-				nIDs.add(notifID);
+				
 				currentFile.delete();
 				fileTwo = true;
 			}
 			if (!fileOne){
-				notifID = pimsLogging.logMessage(batchid, null, null,
-						pimsLogging.getSequence(),
-						pimsLogging.getPriorityHigh(),
-						pimsLogging.getErrMsgId(),
+				pimsLogging.logErrorMessage(batchid, null, 
 						"File 1 is missing in 30_40 process for batchid:"
 								+ batchid);
-				nIDs.add(notifID);
+				
 			}
 			
 			if (!fileTwo){
-				notifID = pimsLogging.logMessage(batchid, null, null,
+				pimsLogging.logMessage(batchid, null, null,
 						pimsLogging.getSequence(),
 						pimsLogging.getPriorityHigh(),
 						pimsLogging.getErrMsgId(),
 						"File 2 is missing in 30_40 process for batchid:"
 								+ batchid);
-				nIDs.add(notifID);
+				
 			}
 			if (fileOne && fileTwo) {
 				pstmt = DBConnectionFactory.prepareStatement(pimsCon,
@@ -186,18 +160,16 @@ public class PIMSProcess_30_40 {
 			fileTwo = false;
 
 		} catch (SQLException sql) {
-			notifID = pimsLogging.logMessage(batchid, null, null,
-					pimsLogging.getSequence(), pimsLogging.getPriorityHigh(),
-					pimsLogging.getErrMsgId(),
+			pimsLogging.logErrorMessage(batchid, null, 
 					"Error in 30_40 Process while upload blobs, Error Details:"
 							+ sql.getMessage());
-			nIDs.add(notifID);
+			
 		} finally {
 			DBConnectionFactory.close(pstmt);
 		}
 	}
 
-	public void loadNothingBlob(String updateQuery, byte[] nothingBlob,
+	private void loadNothingBlob(String updateQuery, byte[] nothingBlob,
 			int batchid) {
 		PreparedStatement updateBatch = null;
 		try {
@@ -206,12 +178,10 @@ public class PIMSProcess_30_40 {
 			updateBatch.executeUpdate();
 			pimsCon.commit();
 		} catch (SQLException sql) {
-			notifID = pimsLogging.logMessage(batchid, null, null,
-					pimsLogging.getSequence(), pimsLogging.getPriorityHigh(),
-					pimsLogging.getErrMsgId(),
+			pimsLogging.logErrorMessage(batchid, null, 
 					"Error while updating Nothing Blob for the batch id:"
 							+ batchid + ", Error Details:" + sql.getMessage());
-			nIDs.add(notifID);
+			
 		} finally {
 			DBConnectionFactory.close(updateBatch);
 		}

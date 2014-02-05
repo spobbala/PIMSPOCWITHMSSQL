@@ -72,14 +72,14 @@ public interface PIMSConstants {
 											+ PIMSConstants.configEmmSuccess
 											+ "', '"
 											+ PIMSConstants.configEmmFailure + "')";
-	public static final String QUERYBATCH = "select batch_id from dbo.pims_batch_header where batch_id = ? "
+	public static final String QUERYBATCH = "select batch_id, ship_to_cust_id from dbo.pims_batch_header where batch_id = ? "
 												 + "and batch_status_cd = ?"; 
-	public static final String QUERYSTATUS = "select batch_id from dbo.pims_batch_header where batch_status_cd = ?";
+	public static final String QUERYSTATUS = "select batch_id, ship_to_cust_id from dbo.pims_batch_header where batch_status_cd = ?";
 	public static final String DELETEQUERY_17_20 = "delete from dbo.pims_product where dhct_sn = ?";
 	public static final String QUERYPRODUCT_17_20 = "select dhct_sn from dbo.pims_product where dhct_sn = ? or dhct_sn = ?";
-	public static final String QUERYBDET_17_20 = "select b.batch_id, b.ship_to_cust_id, d.dhct_sn from dbo.pims_batch_header b "
-												+ "join dbo.pims_batch_detail d"
-												+ " on b.batch_id = d.batch_id where b.batch_id = ?";
+	public static final String QUERYBDET_17_20 = "select dhct_sn "
+												+ "from dbo.pims_batch_detail "
+												+ "where batch_id = ?";
 	public static final String UPDATEDETQUERY_17_20 = "update dbo.pims_batch_detail set "
 												 + "DHCT_SN = ?, "
 												 + "EMM_SMSN = ?, "
@@ -109,11 +109,10 @@ public interface PIMSConstants {
 	public static final String UPDATEBQUERY = "update dbo.pims_batch_header set batch_status_cd = ? where batch_id = ?";
 	
 	public static final String QUERYMFGID = "select mfg_id from dbo.pims_type_files where dhct_type = ? and dhct_rev = ?";
-	public static final String QUERYPROD_20_30 = "select b.ship_to_cust_id, p.dhct_sn, p.sm_sn, p.mac_addr "
-      									       + "from dbo.pims_batch_header b "
-										       + "join dbo.pims_batch_detail d on b.batch_id = d.batch_id "
-										       + "join dbo.pims_product p on d.dhct_sn = p.dhct_sn "
-										       + "where b.batch_id = ?";
+	public static final String QUERYPROD_20_30 = "select p.dhct_sn, p.sm_sn, p.mac_addr "
+      									       + "from dbo.pims_batch_detail d "
+      									       + "join dbo.pims_product p on d.dhct_sn = p.dhct_sn "
+										       + "where d.batch_id = ?";
 	
 	public static final String QUERYCERTS_20_30 = "select convert(int, pub_key_cert_length) pub_key_cert_length , "
 												+ "pub_key_cert "
